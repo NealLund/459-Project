@@ -50,7 +50,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include <avr/io.h>
+#include "C:\Users\Bradford\Documents\EE459\Project\Arduino.h"
 
 #define STARTUP_DELAY 500
 
@@ -76,94 +76,13 @@ enum Interface{
   RS232
 };
 
-Interface _interface;
+enum Interface _interface;
 
 
 
 void loop() 
 {
 
-}
-
-/**
- * @brief Initialize selected IO ports for I2C.
- * 
- * @param SCL Serial clock pin assigment.
- * @param SDA Serial data pin assignment.
- * @return none
- */
-void initLCD_I2C(uint8_t SCL, uint8_t SDA)
-{
-  _interface = I2C;
-
-  // Store pin assigmnents globally
-  _SCL = SCL;
-  _SDA = SDA;
-
-  // Set IO modes
-  pinMode(SCL, OUTPUT);
-  pinMode(SDA, OUTPUT);
-  
-  // Set starting pin states
-  digitalWrite(SCL, HIGH);
-  digitalWrite(SDA, HIGH);
-  
-  // Wait for display to power ON
-  delay(STARTUP_DELAY);
-  clearScreen();
-}
-
-/**
- * @brief Initialize selected IO ports for SPI
- * 
- * @param SCL Serial clock pin assignment.
- * @param SDI Serial data pin assignment.
- * @param CS Chip/Slave select pin assignment.
- * @return none
- */
-void initLCD_SPI(uint8_t SCL, uint8_t SDI, uint8_t CS)
-{
-  _interface = SPI;
-
-  // Store pin assignments globally
-  _SCL = SCL;
-  _SDI = SDI;
-  _CS = CS;
-
-  // Set IO modes
-  pinMode(CS, OUTPUT);
-  pinMode(SCL, OUTPUT);
-  pinMode(SDI, OUTPUT);
-
-  // Set pin states
-  digitalWrite(CS, HIGH);
-  digitalWrite(SCL, HIGH);
-
-  // Wait for display to power ON
-  delay(STARTUP_DELAY);
-  clearScreen();
-}
-
-/**
- * @brief Initalize selected IO ports for RS232.
- * 
- * @param TX Data transmit pin assignment.
- * @return none
- */
-void initLCD_RS232(uint8_t TX)
-{
-  _interface = RS232;
-
-  // Store pin assignments globally
-  _TX = TX;
-
-  // Set IO modes
-  pinMode(TX, OUTPUT);
-  digitalWrite(TX, HIGH);
-
-  // Wait for display to power ON
-  delay(STARTUP_DELAY);
-  clearScreen();
 }
 
 /**
@@ -208,28 +127,6 @@ void stopBit()
 {
   digitalWrite(_TX, HIGH);
   delayMicroseconds(RS232_DELAY);
-}
-
-/**
- * @brief Send a start condition on the I2C bus.
- * 
- * @return none
- */
-void startCondition()
-{
-  clearSDA();
-  clearSCL();
-}
-
-/**
- * @brief Send a stop condition on the I2C bus.
- * 
- * @return none
- */
-void stopCondition()
-{
-  setSCL();
-  setSDA();
 }
 
 /**
@@ -283,23 +180,25 @@ void clearSCL()
 }
 
 /**
- * @brief Set the I2C bus to write mode.
+ * @brief Send a start condition on the I2C bus.
  * 
  * @return none
  */
-void setWriteMode()
+void startCondition()
 {
-  putData_I2C((SLAVE_ADDRESS << 1) | 0x00);
+  clearSDA();
+  clearSCL();
 }
 
 /**
- * @brief Set the I2C bus to read mode.
+ * @brief Send a stop condition on the I2C bus.
  * 
  * @return none
  */
-void setReadMode()
+void stopCondition()
 {
-  putData_I2C((SLAVE_ADDRESS << 1) | 0x01);
+  setSCL();
+  setSDA();
 }
 
 /**
@@ -319,6 +218,87 @@ uint8_t getACK()
 
   return ACK;
 }
+
+/**
+ * @brief Clock each bit of data on the I2C bus and read ACK.
+ * 
+ * @param data Byte of data to be put on the I2C data bus.
+ * @return none
+ */
+void putData_I2C(uint8_t data)
+{
+  int i;
+  for(i = 7; i >= 0; i--)
+  {
+    digitalWrite(_SDA, (data >> i) & 0x01);
+
+    setSCL();
+    clearSCL();
+  }
+
+  getACK();
+}
+
+/**
+ * @brief Put each bit of data on the SPI data bus.
+ * This function sends MSB (D7) first and LSB (D0) last.
+ * 
+ * @param data Byte of data to be put on the SPI data bus.
+ * @return none
+ */
+void putData_SPI(uint8_t data)
+{
+  // Write data byte MSB first -> LSB last
+  int i;
+  for(i = 7; i >= 0; i--)
+  {
+    clearSCL();
+
+    digitalWrite(_SDI, (data >> i) & 0x01);
+    
+    setSCL();
+  }
+}
+
+/**
+ * @brief Put each bit of data on the RS232 data bus.
+ * This function sends LSB (D0) first and MSB (D7) last.
+ * 
+ * @param data Byte of data to be put on the RS232 data bus.
+ * @return none
+ */
+void putData_RS232(uint8_t data)
+{
+  // Write data byte LSB first -> MSB last
+  int i;
+  for(i = 0; i <= 7; i++)
+  {
+    digitalWrite(_TX, (data >> i) & 0x01);
+    delayMicroseconds(RS232_DELAY);
+  }
+}
+
+/**
+ * @brief Set the I2C bus to write mode.
+ * 
+ * @return none
+ */
+void setWriteMode()
+{
+  putData_I2C((SLAVE_ADDRESS << 1) | 0x00);
+}
+
+/**
+ * @brief Set the I2C bus to read mode.
+ * 
+ * @return none
+ */
+void setReadMode()
+{
+  putData_I2C((SLAVE_ADDRESS << 1) | 0x01);
+}
+
+
 
 /**
  * @brief Write 1 byte of data to the display.
@@ -368,61 +348,7 @@ void writeString(unsigned char* data)
   }
 }
 
-/**
- * @brief Clock each bit of data on the I2C bus and read ACK.
- * 
- * @param data Byte of data to be put on the I2C data bus.
- * @return none
- */
-void putData_I2C(uint8_t data)
-{
-  for(int i = 7; i >= 0; i--)
-  {
-    digitalWrite(_SDA, (data >> i) & 0x01);
 
-    setSCL();
-    clearSCL();
-  }
-
-  getACK();
-}
-
-/**
- * @brief Put each bit of data on the SPI data bus.
- * This function sends MSB (D7) first and LSB (D0) last.
- * 
- * @param data Byte of data to be put on the SPI data bus.
- * @return none
- */
-void putData_SPI(uint8_t data)
-{
-  // Write data byte MSB first -> LSB last
-  for(int i = 7; i >= 0; i--)
-  {
-    clearSCL();
-
-    digitalWrite(_SDI, (data >> i) & 0x01);
-    
-    setSCL();
-  }
-}
-
-/**
- * @brief Put each bit of data on the RS232 data bus.
- * This function sends LSB (D0) first and MSB (D7) last.
- * 
- * @param data Byte of data to be put on the RS232 data bus.
- * @return none
- */
-void putData_RS232(uint8_t data)
-{
-  // Write data byte LSB first -> MSB last
-  for(int i = 0; i <= 7; i++)
-  {
-    digitalWrite(_TX, (data >> i) & 0x01);
-    delayMicroseconds(RS232_DELAY);
-  }
-}
 
 /**
  * @brief Send the prefix data byte (0xFE).
@@ -534,6 +460,87 @@ void underlineCursorON()
 {
   prefix();
   write(0x47);
+}
+
+/**
+ * @brief Initalize selected IO ports for RS232.
+ * 
+ * @param TX Data transmit pin assignment.
+ * @return none
+ */
+void initLCD_RS232(uint8_t TX)
+{
+  _interface = RS232;
+
+  // Store pin assignments globally
+  _TX = TX;
+
+  // Set IO modes
+  pinMode(TX, OUTPUT);
+  digitalWrite(TX, HIGH);
+
+  // Wait for display to power ON
+  delay(STARTUP_DELAY);
+  clearScreen();
+}
+
+/**
+ * @brief Initialize selected IO ports for I2C.
+ * 
+ * @param SCL Serial clock pin assigment.
+ * @param SDA Serial data pin assignment.
+ * @return none
+ */
+void initLCD_I2C(uint8_t SCL, uint8_t SDA)
+{
+  _interface = I2C;
+
+  // Store pin assigmnents globally
+  _SCL = SCL;
+  _SDA = SDA;
+
+  // Set IO modes
+  pinMode(SCL, OUTPUT);
+  pinMode(SDA, OUTPUT);
+  
+  // Set starting pin states
+  digitalWrite(SCL, HIGH);
+  digitalWrite(SDA, HIGH);
+  
+  // Wait for display to power ON
+  delay(STARTUP_DELAY);
+  clearScreen();
+}
+
+/**
+ * @brief Initialize selected IO ports for SPI
+ * 
+ * @param SCL Serial clock pin assignment.
+ * @param SDI Serial data pin assignment.
+ * @param CS Chip/Slave select pin assignment.
+ * @return none
+ */
+void initLCD_SPI(uint8_t SCL, uint8_t SDI, uint8_t CS)
+{
+  _interface = SPI;
+
+  // Store pin assignments globally
+  _SCL = SCL;
+  _SDI = SDI;
+  _CS = CS;
+
+  // Set IO modes
+  pinMode(CS, OUTPUT);
+  pinMode(SCL, OUTPUT);
+  pinMode(SDI, OUTPUT);
+
+  // Set pin states
+  digitalWrite(CS, HIGH);
+  digitalWrite(SCL, HIGH);
+
+  // Wait for display to power ON
+  delay(STARTUP_DELAY);
+  clearScreen();
 }
 
 void setup() 
