@@ -17,6 +17,9 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 void lcd_init(void);
 void lcd_moveto(unsigned char);
@@ -26,10 +29,10 @@ void sci_init(void);
 void sci_out(char);
 void sci_outs(char *);
 
-char str1[] = "12345678901234567890";
-char str2[] = ">> USC EE459L <<";
-char str3[] = ">> at328-6.c <<<";
-char str4[] = "-- April 11, 2011 --";
+char str1[] = "New Hole";
+char str2[] = "Input the number of";
+char str3[] = "yards: 000";
+
 
 #define FOSC 7372800		// Clock frequency
 #define BAUD 9600              // Baud rate used by the LCD
@@ -47,10 +50,62 @@ int main(void) {
     lcd_stringout(str2);        // Print string on line 2
     lcd_moveto(0x16);
     lcd_stringout(str3);        // Print string on line 3
-    lcd_moveto(0x54);
-    lcd_stringout(str4);        // Print string on line 4
+    lcd_moveto(0x23);           //move cursor to first 0
+   
+    /* NEED TO INITIALIZE
+    turning on all the output ports
+    reading button_up, button_down, button_left, button_right, button_select
+    reading ultrasonic_1 and ultrasonic_2
+    reading gps
+    reading windvane_volts
+    reading windspeed_volts
+    */
 
+    int i = 0x23;
+    int j = 7;
+    int distance = 0;
     while (1) {                 // Loop forever
+        while (1) {   //initial menu loop
+            char num = str3[j];
+            if(button_up){
+                if(num < 9){ num++; }
+                else { num = 0;}
+                lcd_stringout(num);
+                lcd_moveto(i);
+
+            } else if(button_down) {
+                if(num > 0){num--;}
+                else {num = 9;}
+                lcd_stringout(num);
+                lcd_moveto(i);
+            } else if(button_right){
+                if (i < 0x25 ){ 
+                    i++;
+                    j++;
+                } else {
+                    i = 0x23;
+                    j = 7;
+                }
+                lcd_moveto(i); 
+            } else if(button_left){
+                if (i > 0x23 ){ 
+                    i--;
+                    j--;
+                } else {
+                    i = 0x25;
+                    j = 9;
+                }
+                lcd_moveto(i);
+            } else if(button_select){
+                char dist[3];
+                strncopy(dist, str3+7, 3);
+                distance = atoi(dist);
+                break;
+            }
+        }
+        while(1) { //main information loop
+
+        }
     }
 
     return 0;   /* never reached */
@@ -74,8 +129,8 @@ void lcd_init()
     sci_out(0x53);
     sci_out(15);
 
-    sci_out(0xFE);              // Turn off cursor underline
-    sci_out(0x48);
+    //sci_out(0xFE);              // Turn off cursor underline
+    //sci_out(0x48);
 
 }
 
