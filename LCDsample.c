@@ -34,7 +34,7 @@ char str2[] = "Input the number of";
 char str3[] = "yards: 000";
 
 
-#define FOSC 7372800		// Clock frequency
+#define FOSC 7372800        // Clock frequency
 #define BAUD 9600              // Baud rate used by the LCD
 #define MYUBRR 47   // Value for UBRR0 register
 
@@ -67,60 +67,62 @@ int main(void) {
     unsigned char button_select;
 
     int i = 0x1B;
-    int j = 7;
+    int j = 0;
     int distance = 0;
-    char currnum[] = "0";
+    char currnum[] = "000";
+
     while (1) {                 // Loop forever
         while (1) {   //initial menu loop
-            button_up = !(PIND & (1 << PD2));
-            //!!!!!need to figure out where the other buttons are then change!!!!!
-            //button_down = !(PIND & (1 << PD2));
-            //button_left = !(PIND & (1 << PD2));
-            //button_right = !(PIND & (1 << PD2));
-            //button_select = !(PIND & (1 << PD2));
-            currnum[0] = str3[j];
-            if(button_up){
-                if(currnum[0] < 0x71){ currnum[0] = currnum[0]+1; }
-                else {currnum[0] = 0x30;}
+            button_up = (PIND & (1 << PD2));
+            button_down = (PINC & (1 << PC3));
+            button_left = (PIND & (1 << PD4));
+            button_right = (PINC & (1 << PC4));
+            button_select = (PIND & (1 << PD3));
+            
+            if(!button_up){
+                if(currnum[j] < 0x39){ currnum[j] = currnum[j]+1; }
+                else {currnum[j] = 0x30;}
+                lcd_moveto(0x1B);
                 lcd_stringout(currnum);
                 lcd_moveto(i);
                 _delay_ms(250);
-            } else if(button_down) {
-                if(currnum[0] > 0x30){currnum[0]=currnum[0]-1;}
-                else {currnum[0] = 0x71;}
+            } else if(!button_down) {
+                if(currnum[j] > 0x30){currnum[j]=currnum[j]-1;}
+                else {currnum[j] = 0x39;}
+                lcd_moveto(0x1B);
                 lcd_stringout(currnum);
                 lcd_moveto(i);
                 _delay_ms(250);
-            } else if(button_right){
-                if (i < 0x25 ){ 
+            } else if(!button_right){
+                if (i < 0x1D ){ 
                     i++;
                     j++;
                 } else {
                     i = 0x1B;
-                    j = 7;
+                    j = 0;
                 }
                 lcd_moveto(i); 
                 _delay_ms(250);
-            } else if(button_left){
-                if (i > 0x23 ){ 
+            } else if(!button_left){
+                if (i > 0x1B ){ 
                     i--;
                     j--;
                 } else {
                     i = 0x1D;
-                    j = 9;
+                    j = 2;
                 }
                 lcd_moveto(i);
                 _delay_ms(250);
-            } else if(button_select){
+            } /*else if(button_select){
                 char dist[3];
                 strncopy(dist, str3+7, 3);
                 distance = atoi(dist);
                 break;
-            }
+            }*/
         }
-        while(1) { //main information loop
+        /*while(1) { //main information loop
 
-        }
+        }*/
     }
 
     return 0;   /* never reached */
@@ -144,8 +146,8 @@ void lcd_init()
     sci_out(0x53);
     sci_out(15);
 
-    //sci_out(0xFE);              // Turn off cursor underline
-    //sci_out(0x48);
+    sci_out(0xFE);              // Turn on cursor underline
+    sci_out(0x47);
 
 }
 
