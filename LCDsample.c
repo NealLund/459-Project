@@ -46,11 +46,11 @@ int main(void) {
 
     lcd_moveto(0x00);
     lcd_stringout(str1);        // Print string on line 1
-    lcd_moveto(0x42);
+    lcd_moveto(0x40);
     lcd_stringout(str2);        // Print string on line 2
-    lcd_moveto(0x16);
+    lcd_moveto(0x14);
     lcd_stringout(str3);        // Print string on line 3
-    lcd_moveto(0x23);           //move cursor to first 0
+    lcd_moveto(0x1B);           //move cursor to first 0
    
     /* NEED TO INITIALIZE
     turning on all the output ports
@@ -66,9 +66,10 @@ int main(void) {
     unsigned char button_right;
     unsigned char button_select;
 
-    int i = 0x23;
+    int i = 0x1B;
     int j = 7;
     int distance = 0;
+    char currnum[] = "0";
     while (1) {                 // Loop forever
         while (1) {   //initial menu loop
             button_up = !(PIND & (1 << PD2));
@@ -77,36 +78,39 @@ int main(void) {
             //button_left = !(PIND & (1 << PD2));
             //button_right = !(PIND & (1 << PD2));
             //button_select = !(PIND & (1 << PD2));
-            char num = str3[j];
+            currnum[0] = str3[j];
             if(button_up){
-                if(num < 9){ num++; }
-                else { num = 0;}
-                lcd_stringout(num);
+                if(currnum[0] < 0x71){ currnum[0] = currnum[0]+1; }
+                else {currnum[0] = 0x30;}
+                lcd_stringout(currnum);
                 lcd_moveto(i);
-
+                _delay_ms(250);
             } else if(button_down) {
-                if(num > 0){num--;}
-                else {num = 9;}
-                lcd_stringout(num);
+                if(currnum[0] > 0x30){currnum[0]=currnum[0]-1;}
+                else {currnum[0] = 0x71;}
+                lcd_stringout(currnum);
                 lcd_moveto(i);
+                _delay_ms(250);
             } else if(button_right){
                 if (i < 0x25 ){ 
                     i++;
                     j++;
                 } else {
-                    i = 0x23;
+                    i = 0x1B;
                     j = 7;
                 }
                 lcd_moveto(i); 
+                _delay_ms(250);
             } else if(button_left){
                 if (i > 0x23 ){ 
                     i--;
                     j--;
                 } else {
-                    i = 0x25;
+                    i = 0x1D;
                     j = 9;
                 }
                 lcd_moveto(i);
+                _delay_ms(250);
             } else if(button_select){
                 char dist[3];
                 strncopy(dist, str3+7, 3);
