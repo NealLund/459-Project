@@ -60,12 +60,23 @@ int main(void) {
     reading windvane_volts
     reading windspeed_volts
     */
+    unsigned char button_up;
+    unsigned char button_down;
+    unsigned char button_left;
+    unsigned char button_right;
+    unsigned char button_select;
 
     int i = 0x23;
     int j = 7;
     int distance = 0;
     while (1) {                 // Loop forever
         while (1) {   //initial menu loop
+            button_up = !(PIND & (1 << PD2));
+            //!!!!!need to figure out where the other buttons are then change!!!!!
+            //button_down = !(PIND & (1 << PD2));
+            //button_left = !(PIND & (1 << PD2));
+            //button_right = !(PIND & (1 << PD2));
+            //button_select = !(PIND & (1 << PD2));
             char num = str3[j];
             if(button_up){
                 if(num < 9){ num++; }
