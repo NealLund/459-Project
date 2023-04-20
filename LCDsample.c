@@ -36,7 +36,17 @@ char str3[] = "yards: 000";
 char str4[] = "Wind info: "
 char str5[] = "Yards left: "
 char str6[] = "Like: "
+/*
+Like calculations:
+
+add 1 yard for every 1mph of headwind
+e.g. target is 100yd & you're facing South, wind is blowing North at 10mph, shoot for 110yds
+
+subract 0.5 yard for every 1mph of tailwind
+e.g. target is 100yd & you're facing North, wind is blowing North at 10mph, shoot for 95yds
+*/
 char str7[] = " Consistency: "
+
 
 
 #define FOSC 7372800        // Clock frequency
@@ -49,7 +59,7 @@ int main(void) {
     
     lcd_init();                 // Initialize the LCD
 
-    lcd_moveto(0x00);
+    /lcd_moveto(0x00);
     lcd_stringout(str1);        // Print string on line 1
     lcd_moveto(0x40);
     lcd_stringout(str2);        // Print string on line 2
