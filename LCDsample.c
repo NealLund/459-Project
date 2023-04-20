@@ -33,6 +33,11 @@ char str1[] = "New Hole";
 char str2[] = "Input the number of";
 char str3[] = "yards: 000";
 
+char str4[] = "Wind info: "
+char str5[] = "Yards left: "
+char str6[] = "Like: "
+char str7[] = " Consistency: "
+
 
 #define FOSC 7372800        // Clock frequency
 #define BAUD 9600              // Baud rate used by the LCD
