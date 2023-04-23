@@ -22,7 +22,7 @@ void sci_outs(char *);
 
 #define MYUBRR 47   // Value for UBRR0 register
 
-#define  Trigger_pin	PD5	/* Trigger pin */
+#define  Trigger_pin	PD6	/* Trigger pin */
 #define  Trigger_pin2	PD7	/* Trigger pin */
 
 int TimerOverflow = 0;
@@ -57,20 +57,22 @@ int main(void)
 	sei();			/* Enable global interrupt */
 	TIMSK1 = (1 << TOIE1);	/* Enable Timer1 overflow interrupts */
 	TCCR1A = 0;		/* Set all bit to zero Normal operation */
-	DDRD &= ~(1<<DDD6);						// Set Pin D6 as input to read Echo
-	PORTD |= (1<<PORTD6);					// Enable pull up on D6
-	PORTD &= ~(1<<PD5);						// Init D5 as low (trigger)
+	DDRD &= ~(1<<DDD5);						// Set Pin D6 as input to read Echo
+	PORTD |= (1<<PORTD5);					// Enable pull up on D6
+	PORTD &= ~(1<<PD6);						// Init D5 as low (trigger)
 
-	PORTD &= ~(1<<PD7); //Init D7 as low (trigger)
+	DDRB &= ~(1<<DDD0);						// Set Pin B0 as input to read Echo
+	PORTB |= (1<<PORTB0);					// Enable pull up on B0
+	PORTD &= ~(1<<PD7); 					//Init D7 as low (trigger)
 
 	while(1)
 	{	
 
 		if(flagVariable==0){
 			/* Give 10us trigger pulse on trig. pin to HC-SR04 */
-			PORTD |= (1 << Trigger_pin2);
+			PORTD |= (1 << Trigger_pin);
 			_delay_us(10);
-			PORTD &= (~(1 << Trigger_pin2));
+			PORTD &= (~(1 << Trigger_pin));
 			
 			TCNT1 = 0;	/* Clear Timer counter */
 			TCCR1B = 0x41;	/* Capture on rising edge, No prescaler*/
@@ -79,14 +81,14 @@ int main(void)
 
 			/*Calculate width of Echo by Input Capture (ICP) */
 			
-			while ((TIFR1 & (1 << ICF1)) == 0);/* Wait for rising edge */
+			//while ((TIFR1 & (1 << ICF1)) == 0);/* Wait for rising edge */
 			TCNT1 = 0;	/* Clear Timer counter */
 			TCCR1B = 0x01;	/* Capture on falling edge, No prescaler */
 			TIFR1 = 1<<ICF1;	/* Clear ICP flag (Input Capture flag) */
 			TIFR1 = 1<<TOV1;	/* Clear Timer Overflow flag */
 			TimerOverflow = 0;/* Clear Timer overflow count */
 
-			while ((TIFR1 & (1 << ICF1)) == 0);/* Wait for falling edge */
+			//while ((TIFR1 & (1 << ICF1)) == 0);/* Wait for falling edge */
 			count = ICR1 + (65535 * TimerOverflow);	/* Take count */
 			/* 8MHz Timer freq, sound speed =343 m/s */
 			distance = (double)count / 466.47;
@@ -108,9 +110,9 @@ int main(void)
 		
 		if(flagVariable == 1){
 			/* Give 10us trigger pulse on trig. pin to HC-SR04 */
-			PORTD |= (1 << Trigger_pin);
+			PORTD |= (1 << Trigger_pin2);
 			_delay_us(10);
-			PORTD &= (~(1 << Trigger_pin));
+			PORTD &= (~(1 << Trigger_pin2));
 			
 			TCNT1 = 0;	/* Clear Timer counter */
 			TCCR1B = 0x41;	/* Capture on rising edge, No prescaler*/
