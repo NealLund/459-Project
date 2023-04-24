@@ -340,7 +340,8 @@ int main(void) {
 
         while(1){ //main loop
             button_select = (PIND & (1 << PD3));
-            if(!button_select){ 
+            if(!button_select){
+                 _delay_ms(500);
                 break;
             }
             int b = 0;
