@@ -28,6 +28,7 @@ int checksum_valid(char *);
 int parse_comma_delimited_str(char *, char **, int);
 
 int get_wind_direction(void);
+double get_wind_speed(void);
 
 void lcd_init(void);
 void lcd_moveto(unsigned char);
@@ -71,7 +72,7 @@ int main(void) {
     unsigned char button_right;
     unsigned char button_select;
 
-    int TMP_Therm_ADunits;  //temp termistor value from wind sensor
+    double TMP_Therm_ADunits;  //temp termistor value from wind sensor
     double RV_Wind_ADunits;    //RV output from wind sensor 
     double RV_Wind_Volts;
     int TempCtimes100;
@@ -222,14 +223,52 @@ int main(void) {
         char str[50];
         while(1) { //wind  test loop
             winddir = get_wind_direction();
+            _delay_ms(250);
+            if(winddir >= 0 && winddir <= 30){ //N direction
+                direction[0] = 'N';
+                direction[1] = ' ';
+            }
+            else if(winddir > 30 && winddir <= 75){ //NE direction
+                direction[0] = 'N';
+                direction[1] = 'E';
+            }
+            else if(winddir > 75 && winddir <= 105){ //E direction
+                direction[0] = 'E';
+                direction[1] = ' ';
+            }
+            else if(winddir > 105 && winddir <= 165){ //SE Direction
+                direction[0] = 'S';
+                direction[1] = 'E';
+            }
+            else if(winddir > 165 && winddir <= 195){ //S Direction
+                direction[0] = 'S';
+                direction[1] = ' ';
+            }
+            else if(winddir > 195 && winddir <= 255){ //SW Direction
+                direction[0] = 'S';
+                direction[1] = 'W';
+            }
+            else if(winddir > 255 && winddir <= 290){ //W Direction
+                direction[0] = 'W';
+                direction[1] = ' ';
+            }
+            else { //NW Direction
+                direction[0] = 'N';
+                direction[1] = 'W';
+            }
+
             lcd_moveto(0x40);
-            lcd_stringout("Wind Direction (Deg) ");
+            lcd_stringout("Wind Info: ");
             lcd_moveto(0x14);
             sprintf(str, "%04d", winddir);
+            windspeed = get_wind_speed();
+            sprintf(str, "%d mph", windspeed);
             lcd_stringout(str);
-            windpeed = get_wind_speed();
-            _delay_ms(250);
+            lcd_moveto(0x);
+            lcd_stringout(direction);
         }
+
+
 
 
         //the dream
@@ -247,7 +286,16 @@ int main(void) {
 }
 
 double get_wind_speed(){
-    ADMUX |= (1 << MUX0 ); // Set the channel to 1
+        double zeroWindAdjustment = 0.2;
+        double TMP_Therm_ADunits;  //temp termistor value from wind sensor
+        double RV_Wind_ADunits;    //RV output from wind sensor 
+        double RV_Wind_Volts;
+        int TempCtimes100;
+        double zeroWind_ADunits;
+        double zeroWind_volts;
+        double WindSpeed_MPH;
+
+        ADMUX |= (1 << MUX0 ); // Set the channel to 1
         ADCSRA |= (1 << ADSC ); // Start a conversion
         while ( ADCSRA & (1 << ADSC )){} // wait for conversion complete
         
