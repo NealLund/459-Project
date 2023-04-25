@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 int hexchar2int(char);
 int hex2int(char *);
@@ -49,45 +50,67 @@ int main(void) {
     lcd_init();                 // Initialize the LCD
 
     lcd_moveto(0x00);
-    lcd_stringout("New Hole");        // Print string on line 1
+    lcd_stringout("Mode");        // Print string on line 1
     lcd_moveto(0x40);
-    lcd_stringout("Input the number of");        // Print string on line 2
+    lcd_stringout("Course/Driving Range");        // Print string on line 2
     lcd_moveto(0x14);
-    lcd_stringout("yards: 000");        // Print string on line 3
+    unsigned int driving_flag = 0;
     lcd_moveto(0x1B);           //move cursor to first 0
    
-    /* NEED TO INITIALIZE
-    turning on all the output ports
-    reading button_up, button_down, button_left, button_right, button_select
-    reading ultrasonic_1 and ultrasonic_2
-    reading gps
-    reading windvane_volts
-    reading windspeed_volts
-    */
     unsigned char button_up;
     unsigned char button_down;
     unsigned char button_left;
     unsigned char button_right;
     unsigned char button_select;
 
-    int i = 0x1B;
-    int j = 0;
-    long distance_yds = 0;
-    char currnum[] = "000";
-
     ADMUX |= (1 << REFS0 ); // Set reference to AVCC
     ADMUX &= ~(1 << REFS1 );
     ADMUX &= ~(1 << ADLAR ); // 10-Bit output
     ADCSRA |= (7 << ADPS0 ); // Set the prescalar to 128
-    //ADMUX |= (5 << MUX0 ); // Set the channel to 5
     ADCSRA |= (1 << ADEN ); // Enable the ADC
 
     while (1) {                 // Loop forever
+        lcd_moveto(0x00);
+        lcd_stringout("Mode");        // Print string on line 1
+        lcd_moveto(0x40);
+        lcd_stringout("Course/Driving Range");        // Print string on line 2
+        while(1){
+            button_left = (PINC & (1 << PC4));
+            button_right = (PIND & (1 << PD4));
+            if(!button_left){
+                driving_flag = 0;
+                _delay_ms(250);
+                break;
+            }else if (!button_right){
+                driving_flag = 1;
+                _delay_ms(250);
+                break;
+            }
+        }
+        sci_out(0xFE);              // Clear the screen
+        sci_out(0x51);
+        sci_out(0xFE);              // Turn on cursor underline
+        sci_out(0x47);
+        lcd_moveto(0x00);
+        lcd_stringout("New Hole");        // Print string on line 1
+        lcd_moveto(0x40);
+        lcd_stringout("Input the number of");        // Print string on line 2
+        lcd_moveto(0x14);
+        lcd_stringout("yards: 000");        // Print string on line 3
+        lcd_moveto(0x1B);           //move cursor to first 0
+
+        int i = 0x1B;
+        int j = 0;
+        long distance_yds = 0;
+        char currnum[] = "000";
         while (1) {   //initial menu loop
-            button_up = (PIND & (1 << PD2));
-            button_down = (PINC & (1 << PC3));
-            button_left = (PIND & (1 << PD4));
-            button_right = (PINC & (1 << PC4));
+            if(driving_flag == 1){
+                break;
+            }
+            button_up = (PINC & (1 << PC3));
+            button_down = (PIND & (1 << PD2));
+            button_left = (PINC & (1 << PC4));
+            button_right = (PIND & (1 << PD4));
             button_select = (PIND & (1 << PD3));
             if(!button_up){
                 if(currnum[j] < 0x39){ currnum[j] = currnum[j]+1; }
@@ -131,6 +154,8 @@ int main(void) {
         }
         sci_out(0xFE);              // Clear the screen
         sci_out(0x51);
+        sci_out(0xFE);              // Turn off cursor underline
+        sci_out(0x48);
         lcd_moveto(0x00);
         lcd_stringout("New Hole");        // Print string on line 1
         lcd_moveto(0x40);
@@ -142,10 +167,13 @@ int main(void) {
         char direction[] = "N ";
         int dir = 0;
         while(1){ //hole direction loop
-            button_up = (PIND & (1 << PD2));
-            button_down = (PINC & (1 << PC3));
-            button_left = (PIND & (1 << PD4));
-            button_right = (PINC & (1 << PC4));
+            if(driving_flag == 1){
+                break;
+            }
+            button_up = (PINC & (1 << PC3));
+            button_down = (PIND & (1 << PD2));
+            button_left = (PINC & (1 << PC4));
+            button_right = (PIND & (1 << PD4));
             button_select = (PIND & (1 << PD3));
             if(!button_select){ 
                 break;
@@ -246,6 +274,9 @@ int main(void) {
         }
         char *field[20];
         while(1){ //get inital gps fix
+            if(driving_flag == 1){
+                break;
+            }
             int b = 0;
             char buffer[255];
             
@@ -272,8 +303,6 @@ int main(void) {
         }
         sci_out(0xFE);              // Clear the screen
         sci_out(0x51);
-        sci_out(0xFE);              // Turn off cursor underline
-        sci_out(0x48);
         double currlat = (field[2][0]-'0')*10 + (field[2][1]-'0')+ (field[2][2]-'0')*0.1 + (field[2][3]-'0')*0.01 + (field[2][5]-'0')*0.001
                             + (field[2][6]-'0')*0.0001 + (field[2][7]-'0')*0.00001 + (field[2][8]-'0')*0.000001;
         double currlong = (field[4][0]-'0')*100 + (field[4][1]-'0')*10 + (field[4][2]-'0') + (field[4][3]-'0')*0.1 + (field[4][4]-'0')*0.01 
@@ -316,13 +345,19 @@ int main(void) {
         lcd_moveto(0x00);
         lcd_stringout("Wind info:00mph N ");
         lcd_moveto(0x40);
-        lcd_stringout("Yards left:");        // Print string on line 2
-        lcd_stringout(currnum);
-        lcd_stringout("yds");
+        if(driving_flag == 0){
+            lcd_stringout("Yards left:");        // Print string on line 2
+            lcd_stringout(currnum);
+            lcd_stringout("yds");
+        }  
         lcd_moveto(0x14);
-        lcd_stringout("Like:");        // Print string on line 2
-        lcd_stringout(currnum);
-        lcd_stringout("yds 0dg  ");
+        if(driving_flag == 0){
+            lcd_stringout("Like:");        // Print string on line 2
+            lcd_stringout(currnum);
+            lcd_stringout("yds 0dg  ");
+        } else {
+            lcd_stringout("Like: 0dg  ");
+        }
 
         int TMP_Therm_ADunits;  //temp termistor value from wind sensor
         double RV_Wind_ADunits;    //RV output from wind sensor 
@@ -341,7 +376,9 @@ int main(void) {
         while(1){ //main loop
             button_select = (PIND & (1 << PD3));
             if(!button_select){
-                 _delay_ms(500);
+                _delay_ms(500); 
+                sci_out(0xFE);              // Clear the screen
+                sci_out(0x51);
                 break;
             }
             int b = 0;
@@ -351,35 +388,37 @@ int main(void) {
             //get gps
             int printdist;
             char c = sci_in();
-            if(c == '$'){
-                buffer[b] = c;
-                b++;
-                while (c != '\n'){
-                    c = sci_in();
-                    buffer[b]=c;
+            if(driving_flag == 0){
+                if(c == '$'){
+                    buffer[b] = c;
                     b++;
-                }
-                buffer[b-1] = '\0';
-                if (checksum_valid(buffer)) {
-                    if ((strncmp(buffer, "$GP", 3) == 0) | (strncmp(buffer, "$GN", 3) == 0)) {
-                        if (strncmp(&buffer[3], "GGA", 3) == 0) {
-                            i = parse_comma_delimited_str(buffer, field, 20);
-                            currlat = (field[2][0]-'0')*10 + (field[2][1]-'0')+ (field[2][2]-'0')*0.1 + (field[2][3]-'0')*0.01 + (field[2][5]-'0')*0.001
-                                + (field[2][6]-'0')*0.0001 + (field[2][7]-'0')*0.00001 + (field[2][8]-'0')*0.000001;
-                            currlong = (field[4][0]-'0')*100 + (field[4][1]-'0')*10 + (field[4][2]-'0') + (field[4][3]-'0')*0.1 + (field[4][4]-'0')*0.01 
-                                + (field[4][6]-'0')*0.001 + (field[4][7]-'0')*0.0001 + (field[4][8]-'0')*0.00001 + (field[4][9]-'0')*0.000001;
-                            x_left = fabs(currlong-holelong)*364310*center;
-                            y_left = fabs(currlat-holelat)*364310;
-                            dist_left = sqrt(x_left*x_left + y_left*y_left);
-                            printdist = round(dist_left/3);
-                            lcd_moveto(0x4B);
-                            sprintf(str, "%03d", printdist);
-                            lcd_stringout(str);        // Print string on line 2
+                    while (c != '\n'){
+                        c = sci_in();
+                        buffer[b]=c;
+                        b++;
+                    }
+                    buffer[b-1] = '\0';
+                    if (checksum_valid(buffer)) {
+                        if ((strncmp(buffer, "$GP", 3) == 0) | (strncmp(buffer, "$GN", 3) == 0)) {
+                            if (strncmp(&buffer[3], "GGA", 3) == 0) {
+                                i = parse_comma_delimited_str(buffer, field, 20);
+                                currlat = (field[2][0]-'0')*10 + (field[2][1]-'0')+ (field[2][2]-'0')*0.1 + (field[2][3]-'0')*0.01 + (field[2][5]-'0')*0.001
+                                    + (field[2][6]-'0')*0.0001 + (field[2][7]-'0')*0.00001 + (field[2][8]-'0')*0.000001;
+                                currlong = (field[4][0]-'0')*100 + (field[4][1]-'0')*10 + (field[4][2]-'0') + (field[4][3]-'0')*0.1 + (field[4][4]-'0')*0.01 
+                                    + (field[4][6]-'0')*0.001 + (field[4][7]-'0')*0.0001 + (field[4][8]-'0')*0.00001 + (field[4][9]-'0')*0.000001;
+                                x_left = fabs(currlong-holelong)*364310*center;
+                                y_left = fabs(currlat-holelat)*364310;
+                                dist_left = sqrt(x_left*x_left + y_left*y_left);
+                                printdist = round(dist_left/3);
+                                lcd_moveto(0x40);
+                                lcd_stringout("Yards left:");        // Print string on line 2
+                                sprintf(str, "%03dyds", printdist);
+                                lcd_stringout(str);        // Print string on line 2
+                            }
                         }
                     }
                 }
             }
-
             //get wind speed
             ADMUX |= (1 << MUX0 ); // Set the channel to 1
             ADCSRA |= (1 << ADSC ); // Start a conversion
@@ -443,8 +482,8 @@ int main(void) {
                     direction[1] = 'W';
                     break;
                 default:
-                    direction[0] = '-';
-                    direction[1] = '1';
+                    direction[0] = 'N';
+                    direction[1] = ' ';
             }
 
             lcd_moveto(0x00);
@@ -459,42 +498,42 @@ int main(void) {
                 projected_yds_left = printdist;
                 while(wind_i >= 5){
                     wind_i = wind_i - 5;
-                    projected_yds_left = printdist*0.1 + printdist;
+                    projected_yds_left = printdist*0.01 + projected_yds_left;
                 }
                 hitdeg = 0;
                 hitdir = ' ';
             }
-            else if(abs(dir - winddir) == 45){
+            else if((dir - winddir) == 45){
                 projected_yds_left = printdist;
                 while(wind_i >= 5){
                     wind_i = wind_i - 5;
-                    projected_yds_left = printdist*0.05 + printdist;
-                    hitdeg += 4;
+                    projected_yds_left = printdist*0.005 + projected_yds_left;
+                    hitdeg += 1;
                 }
                 hitdir = 'R';
             }
-            else if(abs(dir - winddir) == 315){
+            else if((dir - winddir) == -45){
                 projected_yds_left = printdist;
                 while(wind_i >= 5){
                     wind_i = wind_i - 5;
-                    projected_yds_left = printdist*0.05 + printdist;
-                    hitdeg += 4;
+                    projected_yds_left = printdist*0.005 + projected_yds_left;
+                    hitdeg += 1;
                 }
                 hitdir = 'L';
             }
-            else if(abs(dir - winddir) == 90){
+            else if((dir - winddir) == 90){
                 projected_yds_left = printdist;
                 while(wind_i >= 5){
                     wind_i = wind_i - 5;
-                    hitdeg += 8;
+                    hitdeg += 2;
                 }
                 hitdir = 'R';
             }
-            else if(abs(dir - winddir) == 270){
+            else if((dir - winddir) == -90){
                 projected_yds_left = printdist;
                 while(wind_i >= 5){
                     wind_i = wind_i - 5;
-                    hitdeg += 8;
+                    hitdeg += 2;
                 }
                 hitdir = 'L';
             }
@@ -502,25 +541,25 @@ int main(void) {
                 projected_yds_left = printdist;
                 while(wind_i >= 5){
                     wind_i = wind_i - 5;
-                    projected_yds_left = printdist - printdist*0.05;
+                    projected_yds_left = projected_yds_left - printdist*0.005;
                 }
                 hitdir = ' ';
             }
-            else if(abs(dir - winddir) == 135){
+            else if((dir - winddir) == 135){
                 projected_yds_left = printdist;
                 while(wind_i >= 5){
                     wind_i = wind_i - 5;
-                    projected_yds_left = printdist - printdist*0.025;
-                    hitdeg += 4;
+                    projected_yds_left = printdist - printdist*0.0025;
+                    hitdeg += 1;
                 }
                 hitdir = 'R';
             }
-            else if(abs(dir - winddir) == 225){
+            else if((dir - winddir) == -135){
                 projected_yds_left = printdist;
                 while(wind_i >= 5){
                     wind_i = wind_i - 5;
-                    projected_yds_left = printdist - printdist*0.025;
-                    hitdeg += 4;
+                    projected_yds_left = projected_yds_left - printdist*0.0025;
+                    hitdeg += 1;
                 }
                 hitdir = 'L';
             }
@@ -530,32 +569,15 @@ int main(void) {
                 hitdir = ' ';
             }
             lcd_moveto(0x19);
-            sprintf(str, "%03dyds ", projected_yds_left);
-            lcd_stringout(str);
-            sprintf(str, "%02ddg ", hitdeg);
+            if(driving_flag == 0){
+                sprintf(str, "%03dyds ", projected_yds_left);
+                lcd_stringout(str);
+            }
+            sprintf(str, "%ddg ", hitdeg);
             lcd_stringout(str);
             sci_out(hitdir);
 
         }
-        /*while(1) { //wind vane test loop
-            winddir = get_wind_direction();
-            lcd_moveto(0x40);
-            lcd_stringout("Wind Direction (Deg) ");
-            lcd_moveto(0x14);
-            sprintf(str, "%04d", winddir);
-            lcd_stringout(str);
-            _delay_ms(250);
-        }*/
-
-        //the dream
-        /*lcd_moveto(0x00);
-        lcd_stringout("Wind info:00mph N ");        // Print string on line 1
-        lcd_moveto(0x40);
-        lcd_stringout("Yards left:000yds");        // Print string on line 2
-        lcd_moveto(0x14);
-        lcd_stringout("Like:000yds 0dg N ");        // Print string on line 3
-        lcd_moveto(0x54);
-        lcd_stringout("Spd:00mph Cnst:000%");*/
     }
 
     return 0;   /* never reached */
@@ -646,7 +668,7 @@ int get_wind_direction()
     if (adc < 797) return (0);
     if (adc < 897) return (315);
     if (adc < 957) return (270);
-    return (-1); // error, disconnected?*/
+    return (0); // default north/
 }
 
 /*
