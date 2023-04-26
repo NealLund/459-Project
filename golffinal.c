@@ -508,7 +508,7 @@ int main(void) {
                 while(wind_i >= 5){
                     wind_i = wind_i - 5;
                     projected_yds_left = printdist*0.005 + projected_yds_left;
-                    hitdeg += 1;
+                    hitdeg += 2;
                 }
                 hitdir = 'R';
             }
@@ -517,7 +517,7 @@ int main(void) {
                 while(wind_i >= 5){
                     wind_i = wind_i - 5;
                     projected_yds_left = printdist*0.005 + projected_yds_left;
-                    hitdeg += 1;
+                    hitdeg += 2;
                 }
                 hitdir = 'L';
             }
@@ -525,7 +525,7 @@ int main(void) {
                 projected_yds_left = printdist;
                 while(wind_i >= 5){
                     wind_i = wind_i - 5;
-                    hitdeg += 2;
+                    hitdeg += 4;
                 }
                 hitdir = 'R';
             }
@@ -533,7 +533,7 @@ int main(void) {
                 projected_yds_left = printdist;
                 while(wind_i >= 5){
                     wind_i = wind_i - 5;
-                    hitdeg += 2;
+                    hitdeg += 4;
                 }
                 hitdir = 'L';
             }
@@ -550,7 +550,7 @@ int main(void) {
                 while(wind_i >= 5){
                     wind_i = wind_i - 5;
                     projected_yds_left = printdist - printdist*0.0025;
-                    hitdeg += 1;
+                    hitdeg += 2;
                 }
                 hitdir = 'R';
             }
@@ -559,7 +559,7 @@ int main(void) {
                 while(wind_i >= 5){
                     wind_i = wind_i - 5;
                     projected_yds_left = projected_yds_left - printdist*0.0025;
-                    hitdeg += 1;
+                    hitdeg += 2;
                 }
                 hitdir = 'L';
             }
