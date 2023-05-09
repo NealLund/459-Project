@@ -1,18 +1,7 @@
 /*************************************************************
-*       at328-6.c - Demonstrate interface to a serial LCD display
+*       EE459 Group 5 Project
 *
-*       This program will print a message on an LCD display
-*       using a serial interface.  It is designed to work with a
-*       Matrix Orbital LK204-25 using an RS-232 interface.
-*
-* Revision History
-* Date     Author      Description
-* 11/07/07 A. Weber    First Release
-* 02/26/08 A. Weber    Code cleanups
-* 03/03/08 A. Weber    More code cleanups
-* 04/22/08 A. Weber    Added "one" variable to make warning go away
-* 04/11/11 A. Weber    Adapted for ATmega168
-* 11/18/13 A. Weber    Renamed for ATmega328P
+*       Bradford Peterson, Neal Lund, Emma Gronstad
 *************************************************************/
 
 #include <avr/io.h>
